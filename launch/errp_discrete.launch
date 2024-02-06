@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="filepath"  default="/home/$(env USER)/Research/2024_wheelchair_errp/discrete/bag" />
+  <arg name="autostart" default='true'/>
+
+  <!-- protocol arguments -->
+  <arg name="subject"   default="prova"/> 
+  <arg name="modality"  default="errp.wheelchair"/> 
+  <arg name="task"      default="discrete"/>
+  <arg name="extra"     default=""/>
+
+  <!-- acquisition arguments -->
+  <arg name="plugin" default='rosneuro::EGDDevice'/>
+  <arg name="devarg" default='eego|EEG_MASK|0x001FFF608779CF25'/> 
+  <arg name="framerate"  default='16'/>
+  <arg name="samplerate" default='512'/>
+
+  <!-- Protocol parameters -->
+  <rosparam param="/protocol/subject"	 subst_value="True">$(arg subject)</rosparam>
+  <rosparam param="/protocol/modality" 	 subst_value="True">$(arg modality)</rosparam>
+  <rosparam param="/protocol/task"	 subst_value="True">$(arg task)</rosparam>
+  <rosparam param="/protocol/extra"	 subst_value="True">$(arg extra)</rosparam>
+
+
+  <?ignore Default package to warmup the sensors?>
+  <include file="$(find wheelchair_iaslab_sensors)/launch/sensors_setup.launch"/> <!-- initialize the sensors -->
+  <include file="$(find wheelchair_iaslab_description)/launch/test_urdf_sensor.launch"/> <!-- initialize the TF (not sure) -->
+  <include file="$(find wheelchair_iaslab_odometry)/launch/odometry.launch"/>
+
+  <!-- IT IS NEEDED TO LAUCH THE RASPI WITH A EXTERNAL COMMAND-->
+
+  <?ignore Controller that save when the person perseption of the initial movments?>
+  <node name="joyconverter" pkg="wheelchair_iaslab_control" type="errp_discrete.py">
+  </node>
+
+  <node name="acquisition" pkg="rosneuro_acquisition" type="acquisition" >
+    <param name="~plugin" 	  value="$(arg plugin)"/>
+    <param name="~devarg" 	  value="$(arg devarg)"/>
+    <param name="~samplerate" value="$(arg samplerate)"/>
+    <param name="~framerate"  value="$(arg framerate)"/>
+  </node>
+  
+  <?ignore Warm up the josticks?>
+  <group>
+    <node pkg='joy' name='joy0' type='joy_node'>
+      <param name='dev' type='string' value='/dev/input/js0'/>
+    </node>
+  </group>
+  
+  <?ignore Record the bag files?>
+  <node pkg="rosbag" type="record" args="-o $(arg filepath)/$(arg subject) /cmd_vel /odom /odometry/filtered /tf /tf_static /joy /events/bus /opt_01/camera/camera/color/image_raw/compressed" name="record" output="screen"/>
+  
+  <?ignore Record the GDF file?>
+  <node name="recorder" pkg="rosneuro_recorder" type="recorder" >
+    <param name="~autostart" value="$(arg autostart)"/>
+    <param name="~filepath" value="/home/$(env USER)/gdf/errp"/>
+  </node>
+
+</launch>
