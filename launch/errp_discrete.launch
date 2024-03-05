@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <launch>
 
-  <arg name="filepath"  default="/home/$(env USER)/Research/2024_wheelchair_errp/discrete/bag" />
+  <arg name="filepath"  default="/home/$(env USER)/Research/2024_wheelchair_errp/discrete" />
   <arg name="autostart" default='true'/>
 
   <!-- protocol arguments -->
-  <arg name="subject"   default="prova"/> 
+  <arg name="subject"   default="g5"/> 
   <arg name="modality"  default="errp.wheelchair"/> 
   <arg name="task"      default="discrete"/>
   <arg name="extra"     default=""/>
@@ -31,7 +31,7 @@
   <!-- IT IS NEEDED TO LAUCH THE RASPI WITH A EXTERNAL COMMAND-->
 
   <?ignore Controller that save when the person perseption of the initial movments?>
-  <node name="joyconverter" pkg="wheelchair_iaslab_control" type="errp_discrete.py">
+  <node name="joyconverter" pkg="wheelchair_iaslab_control" type="errp_discrete.py" output="screen">
   </node>
 
   <node name="acquisition" pkg="rosneuro_acquisition" type="acquisition" >
@@ -49,12 +49,14 @@
   </group>
   
   <?ignore Record the bag files?>
-  <node pkg="rosbag" type="record" args="-o $(arg filepath)/$(arg subject) /cmd_vel /odom /odometry/filtered /tf /tf_static /joy /events/bus /opt_01/camera/camera/color/image_raw/compressed" name="record" output="screen"/>
+  <node pkg="rosbag" type="record" args="-o $(arg filepath)/bag/$(arg subject) /cmd_vel /odom /odometry/filtered /tf /tf_static /joy /events/bus /opt_01/camera/camera/color/image_raw/compressed /scan_right /scan_left" name="record" output="screen"/>
   
   <?ignore Record the GDF file?>
   <node name="recorder" pkg="rosneuro_recorder" type="recorder" >
     <param name="~autostart" value="$(arg autostart)"/>
-    <param name="~filepath" value="/home/$(env USER)/gdf/errp"/>
+    <!-- <param name="~filepath" value="/home/$(env USER)/gdf/errp"/> -->
+    <param name="~filepath" value="$(arg filepath)/gdf"/>
+
   </node>
 
 </launch>
